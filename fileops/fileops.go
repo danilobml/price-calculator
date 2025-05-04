@@ -2,28 +2,49 @@ package fileops
 
 import (
 	"bufio"
-	"strconv"
+	"encoding/json"
+	"errors"
 	"os"
+
+	"github.com/danilobml/price-calculator/conversion"
 )
 
-const filename string = "prices.txt"
-
-func GetPrices() ([]float64, error) {
-	prices := []float64{}
+func GetFloatsFromFile(filename string) ([]float64, error) {
+	values := []float64{}
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return []float64{}, err
+		return []float64{}, errors.New("failed to open file " + filename)
 	}
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		num, err := strconv.ParseFloat(line, 64)
+		err = scanner.Err()
+		if err != nil {
+			return []float64{}, errors.New("failed to scan line in file " + filename)
+		}
+		floatValue, err := conversion.StringToFloat(line)
 		if err != nil {
 			return []float64{}, err
 		}
-		prices = append(prices, num)
+		values = append(values, floatValue)
 	}
-	return prices, nil
+	return values, nil
+}
+
+func WriteJSON(data any, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return errors.New("failed to create to json file")
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(data)
+	if err != nil {
+		return errors.New("failed to generate json")
+	}
+	return nil
 }

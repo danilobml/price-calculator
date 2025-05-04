@@ -7,19 +7,24 @@ import (
 	"github.com/danilobml/price-calculator/price"
 )
 
+const pricesFilename string = "prices.txt"
+const taxRatesFilename string = "rates.txt"
+
+const jobsSavingFile string = "jobs.json"
+
 func main() {
-	prices, err := fileops.GetPrices()
+	prices, err := fileops.GetFloatsFromFile(pricesFilename)
 	if err != nil {
 		fmt.Println("Error reading prices file:", err)
 		return
 	}
-	taxRates := []float64{0, 0.7, 0.1, 0.15}
-
-	for _, taxRate := range taxRates {
-		newJob := price.NewTaxIncludedPriceJob(taxRate, prices)
-		newJob.Process()
-		fmt.Println(*newJob)
+	taxRates, err := fileops.GetFloatsFromFile(taxRatesFilename)
+	if err != nil {
+		fmt.Println("Error reading prices file:", err)
+		return
 	}
 
-	
+	jobs := price.GenerateJobs(taxRates, prices)
+
+	fileops.WriteJSON(jobs, jobsSavingFile)
 }
